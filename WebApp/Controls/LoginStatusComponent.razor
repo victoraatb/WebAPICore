@@ -1,0 +1,28 @@
+﻿@inject NavigationManager NavigationManager
+@inject IAuthenticationUseCases _authenticationUseCases
+
+@if (userName != null)
+{
+    <text>Bem vindo @userName </text>
+    <button type="button" @onclick="Logout" class="btn btn-dark">Sair</button>
+}
+@code {
+
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+
+    string userName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await authenticationState;
+        userName = state.User.Identity.Name;
+    }
+
+    async Task Logout()
+    {
+        await _authenticationUseCases.Logout();
+        NavigationManager.NavigateTo("/", true);
+    }
+
+}

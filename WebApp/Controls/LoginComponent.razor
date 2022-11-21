@@ -1,0 +1,45 @@
+﻿@using WebApp.ViewModels
+@inject IAuthenticationUseCases authenticationUserCases
+@inject NavigationManager navigationManager;
+
+<AlertComponent @ref="_alertComponent"></AlertComponent>
+<h3>Login</h3>
+@if (_userViewModel != null)
+{
+    <EditForm Model="_userViewModel" OnValidSubmit="Login" class="form-inline">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <ValidationSummary></ValidationSummary>
+        <div class="form-group">
+            <label for="name">User Name</label>
+            <InputText id="name" @bind-Value="_userViewModel.UserName" class="form-control"></InputText> 
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <InputText id="password" @bind-Value="_userViewModel.Password" class="form-control" type="password"></InputText>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </EditForm>
+}
+@code {
+    AlertComponent _alertComponent;
+
+    UserViewModel _userViewModel;
+
+    protected override void OnInitialized()
+    {
+        _userViewModel = new UserViewModel();
+    }
+
+    async Task Login()
+    {
+        var token = await authenticationUserCases.LoginAsync(_userViewModel.UserName, _userViewModel.Password);
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            _alertComponent.ErrorMessage = "Login Falhou";
+            _alertComponent.Show();
+        }
+        else
+            navigationManager.NavigateTo("/", true);
+    }
+
+}

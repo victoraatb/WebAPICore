@@ -1,0 +1,119 @@
+﻿@page "/tickets/{ticketId:int}"
+@page "/projects/{projectId:int}/inserirticket"
+
+@attribute [Authorize]
+@inject ITicketsScreenUseCases TicketsScreenUseCases;
+@inject ITicketScreenUseCases TicketScreenUseCases;
+@inject NavigationManager NavigationManager;
+
+<h3>Ticket</h3>
+<br/>
+<AlertComponent @ref="alertComponent"></AlertComponent>
+@if (ticket != null)
+{
+    <EditForm Model="ticket" OnValidSubmit="Salvar">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <ValidationSummary></ValidationSummary>
+        <div class="mb-3">
+            <label for="title" class="form-label">Título</label>
+            <InputText class="form-control" id="title" @bind-Value="ticket.Titulo"></InputText>
+        </div>
+        <div class="mb-3">
+            <label for="descricao" class="form-label">Descrição</label>
+            <InputText class="form-control" id="descricao" @bind-Value="ticket.Descricao"></InputText>
+        </div>
+        <div class="mb-3">
+            <label for="dono" class="form-label">Dono</label>
+            <InputText class="form-control" id="dono" @bind-Value="ticket.Dono" readonly></InputText>
+        </div>
+        <div class="mb-3">
+            <label for="datacriacao" class="form-label">Data de Criação</label>
+            <InputDate class="form-control" id="datacriacao" @bind-Value="ticket.DataOcorrencia"></InputDate>
+        </div>
+        <div class="mb-3">
+            <label for="datavencimento" class="form-label">Data de Vencimento</label>
+            <InputDate class="form-control" id="datavencimento" @bind-Value="ticket.DataVencimento"></InputDate>
+        </div>
+        <button class="btn btn-primary" type="submit">Salvar</button>
+        &nbsp;
+        <button class="btn btn-danger" type="button" @onclick="DeletarTicket">Deletar</button>
+    </EditForm>
+}
+
+@code {
+    Ticket ticket;
+    AlertComponent alertComponent;
+    
+    [Parameter]
+    public int? ticketId { get; set; }
+
+    [Parameter]
+    public int? projectId { get; set; }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ticketId.HasValue)
+          ticket = await TicketsScreenUseCases.ViewTicketById(ticketId.Value);
+        
+        if (projectId.HasValue && ticket == null)
+            ticket = new Ticket {ProjectId = this.projectId.Value};
+    }
+
+    async Task Salvar()
+    {
+        bool bSucesso = true;
+        if (!ticket.ValidarDescricao())
+        {
+            alertComponent.ErrorMessage = "Descrição é requerida";
+            alertComponent.Show();
+            bSucesso = false;
+        }
+
+        if (!ticket.ValidarDataReportadaPresente())
+        {
+            alertComponent.ErrorMessage = "Data da Ocorrência é requerida";
+            alertComponent.Show();
+            bSucesso = false;
+        }
+        
+        if (!ticket.ValidarDataVencimentoPresente())
+        {
+            alertComponent.ErrorMessage = "Data de Vencimento é requerida";
+            alertComponent.Show();
+            bSucesso = false;
+        }
+        
+        if (!ticket.ValidarDataVencimentoNoFuturo())
+        {
+            alertComponent.ErrorMessage = "Data de Vencimento deve ser maior que hoje";
+            alertComponent.Show();
+            bSucesso = false;
+        }
+        
+        if (!ticket.ValidarDataVencimentoDepoisDataCriacao())
+        {
+            alertComponent.ErrorMessage = "Data de Vencimento deve ser maior que a data da Ocorrência";
+            alertComponent.Show();
+            bSucesso = false;
+        }
+        
+        if (bSucesso)
+        {
+            if (ticketId.HasValue) 
+                await TicketScreenUseCases.UpdateTicket(ticket);
+            else 
+                await TicketScreenUseCases.AddTicket(ticket);
+            
+            NavigationManager.NavigateTo($"/projects/{ticket.ProjectId}/tickets");
+        }
+    }
+
+    async Task DeletarTicket()
+    {
+        if (!ticketId.HasValue) return;
+
+        await TicketScreenUseCases.DeleteTicket(ticketId.Value);
+        NavigationManager.NavigateTo($"/projects/{ticket.ProjectId}/tickets");
+    }
+
+}

@@ -1,0 +1,22 @@
+﻿@if (Ticket != null)
+{
+    <tr>
+        <td>
+
+            <NavLink href="@($"/tickets/{Ticket.TicketId}")">
+                @Ticket.Titulo
+            </NavLink>
+        </td>
+        <td>@Ticket.Descricao</td>
+        <td>@Ticket.Dono</td>
+        <td>@(Ticket.DataOcorrencia.HasValue ? Ticket.DataOcorrencia.Value.ToString("yyyy-MM-dd") : string.Empty)</td>
+        <td>@(Ticket.DataVencimento.HasValue ? Ticket.DataVencimento.Value.ToString("yyyy-MM-dd") : string.Empty)</td>
+    </tr>
+}
+
+@code {
+
+    [Parameter]
+    public Ticket Ticket { get; set; }
+
+}
